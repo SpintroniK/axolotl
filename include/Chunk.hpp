@@ -9,6 +9,7 @@
 enum class OpCode : std::uint8_t
 {
     Constant,
+    Negate,
     Return,
 };
 
@@ -20,6 +21,7 @@ namespace debug
 class Chunk
 {
     friend class debug::Debug;
+    friend class Vm;
 
 public:
     template <typename T>

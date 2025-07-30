@@ -1,5 +1,6 @@
 #include "include/Chunk.hpp"
 #include "include/Debug.hpp"
+#include "include/Vm.hpp"
 
 #include <string_view>
 #include <vector>
@@ -12,13 +13,23 @@ int main(int argc, char** argv)
 
     Chunk chunk;
 
-    chunk.write(OpCode::Return, 123);
+    // chunk.write(OpCode::Return, 123);
 
     const auto const1 = chunk.add_constant(1.2);
     chunk.write(OpCode::Constant, 123);
     chunk.write(const1, 123);
+    chunk.write(OpCode::Negate, 123);
+    chunk.write(OpCode::Return, 123);
 
     debug::Debug::dissassemble_chunk(chunk, "chunk");
+
+    Vm vm;
+    const auto result = vm.interpret(chunk);
+
+    if (result != InterpretResult::Ok)
+    {
+        return EXIT_FAILURE;
+    }
 
     return EXIT_SUCCESS;
 }
