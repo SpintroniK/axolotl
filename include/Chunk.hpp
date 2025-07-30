@@ -10,6 +10,10 @@ enum class OpCode : std::uint8_t
 {
     Constant,
     Negate,
+    Add,
+    Subtract,
+    Mutliply,
+    Divide,
     Return,
 };
 

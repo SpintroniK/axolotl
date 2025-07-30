@@ -4,6 +4,7 @@
 
 #include <array>
 #include <cstdint>
+#include <functional>
 #include <iostream>
 
 enum class InterpretResult : std::uint8_t
@@ -49,6 +50,14 @@ public:
     }
 
 private:
+    template <typename F>
+    void binary_op(F&& func)
+    {
+        const auto rhs = stack.pop();
+        const auto lhs = stack.pop();
+        stack.push(std::invoke(std::forward<F>(func), lhs, rhs));
+    }
+
     [[nodiscard]] InterpretResult run()
     {
         for (;;)
@@ -64,6 +73,26 @@ private:
             case OpCode::Negate:
             {
                 stack.push(-stack.pop());
+                break;
+            }
+            case OpCode::Add:
+            {
+                binary_op(std::plus<Value>{});
+                break;
+            }
+            case OpCode::Subtract:
+            {
+                binary_op(std::minus<Value>{});
+                break;
+            }
+            case OpCode::Mutliply:
+            {
+                binary_op(std::multiplies<Value>{});
+                break;
+            }
+            case OpCode::Divide:
+            {
+                binary_op(std::divides<Value>{});
                 break;
             }
             case OpCode::Constant:

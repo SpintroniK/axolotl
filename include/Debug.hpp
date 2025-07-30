@@ -39,10 +39,10 @@ namespace debug
             {
             case OpCode::Constant: return constant_instruction("CONSTANT", chunk, offset);
             case OpCode::Negate: return simple_instruction("NEGATE", offset);
-            // case OpCode::Add: return simple_instruction("ADD", offset);
-            // case OpCode::Subtract: return simple_instruction("SUBTRACT", offset);
-            // case OpCode::Mutliply: return simple_instruction("MULTIPLY", offset);
-            // case OpCode::Divide: return simple_instruction("DIVIDE", offset);
+            case OpCode::Add: return simple_instruction("ADD", offset);
+            case OpCode::Subtract: return simple_instruction("SUBTRACT", offset);
+            case OpCode::Mutliply: return simple_instruction("MULTIPLY", offset);
+            case OpCode::Divide: return simple_instruction("DIVIDE", offset);
             case OpCode::Return: return simple_instruction("RETURN", offset);
             default:
                 std::cout << "[DEBUG] Unknown opcode: " << static_cast<int>(instruction) << '\n';
