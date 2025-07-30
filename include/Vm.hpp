@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <functional>
 #include <iostream>
+#include <string_view>
 
 enum class InterpretResult : std::uint8_t
 {
@@ -47,6 +48,12 @@ public:
         chunk = std::move(code);
         ip = 0;
         return run();
+    }
+
+    [[nodiscard]] InterpretResult interpret(std::string_view source)
+    {
+        // compile(source);
+        return InterpretResult::Ok;
     }
 
 private:
