@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Chunk.hpp"
+#include "Compiler.hpp"
 
 #include <array>
 #include <cstdint>
@@ -50,10 +51,17 @@ public:
         return run();
     }
 
-    [[nodiscard]] InterpretResult interpret(std::string_view source)
+    [[nodiscard]] InterpretResult interpret(std::string_view source, Compiler& compiler)
     {
-        // compile(source);
-        return InterpretResult::Ok;
+        auto compiled_chunk = compiler.compile(source);
+        if (!compiled_chunk)
+        {
+            return InterpretResult::CompileError;
+        }
+
+        chunk = compiled_chunk.value();
+        ip = 0;
+        return run();
     }
 
 private:
@@ -64,6 +72,7 @@ private:
         const auto lhs = stack.pop();
         stack.push(std::invoke(std::forward<F>(func), lhs, rhs));
     }
+
 
     [[nodiscard]] InterpretResult run()
     {
