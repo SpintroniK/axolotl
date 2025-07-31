@@ -103,6 +103,7 @@ private:
             {
             case OpCode::Return:
             {
+                // TODO: get the correct type before cout
                 std::cout << "Return: " << values::as<Number>(stack.pop()) << '\n';
                 return InterpretResult::Ok;
             }
