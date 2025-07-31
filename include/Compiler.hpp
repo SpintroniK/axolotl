@@ -1,12 +1,12 @@
 #pragma once
 
 #include "Chunk.hpp"
+#include "Debug.hpp"
 #include "Scanner.hpp"
 #include "Value.hpp"
 
 #include <charconv>
 #include <functional>
-#include <iomanip>
 #include <iostream>
 #include <limits>
 #include <optional>
@@ -122,9 +122,10 @@ private:
 
     auto number() -> void
     {
-        double value{};
-        const auto result = std::from_chars(parser.previous.get_lexme().begin(), parser.previous.get_lexme().end(), value);
-        emit_constant(value);
+        Number val{};
+        const auto result = std::from_chars(parser.previous.get_lexme().begin(), parser.previous.get_lexme().end(), val);
+
+        emit_constant(values::make(val));
     }
 
     auto grouping() -> void
@@ -175,6 +176,13 @@ private:
         }
 
         std::invoke(prefix_rule, this);
+
+        while (precedence <= get_rule(parser.current.get_type()).precedence)
+        {
+            advance();
+            auto infix_rule = get_rule(parser.previous.get_type()).infix;
+            std::invoke(infix_rule, this);
+        }
     }
 
     auto error_at_current(std::string_view message) -> void
@@ -216,6 +224,10 @@ private:
     auto end_compiler() -> void
     {
         emit_return();
+        if (!parser.had_error && debug::enabled)
+        {
+            debug::Debug::dissassemble_chunk(current_chunk(), "code");
+        }
     }
 
     auto emit_return() -> void

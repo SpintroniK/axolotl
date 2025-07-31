@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Chunk.hpp"
+#include "Value.hpp"
 
 #include <cstddef>
 #include <iomanip>
@@ -9,6 +10,8 @@
 
 namespace debug
 {
+    static constexpr bool enabled = true;
+
     class Debug
     {
     public:
@@ -70,7 +73,7 @@ namespace debug
         template <typename T>
         static void print_value(const T& value)
         {
-            std::cout << value;
+            std::cout << values::as<Number>(value);
         }
     };
 } // namespace debug

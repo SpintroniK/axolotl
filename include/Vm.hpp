@@ -2,8 +2,10 @@
 
 #include "Chunk.hpp"
 #include "Compiler.hpp"
+#include "Value.hpp"
 
 #include <array>
+#include <cstddef>
 #include <cstdint>
 #include <functional>
 #include <iostream>
@@ -36,6 +38,16 @@ public:
         stack_top = 0;
     }
 
+    [[nodiscard]] auto at(std::size_t index) const noexcept -> T
+    {
+        return data[index];
+    }
+
+    [[nodiscard]] auto top() const noexcept -> std::size_t
+    {
+        return stack_top;
+    }
+
 private:
     std::array<T, Size> data{};
     std::size_t stack_top = 0;
@@ -66,11 +78,19 @@ public:
 
 private:
     template <typename F>
-    void binary_op(F&& func)
+    InterpretResult binary_op(F&& func)
     {
-        const auto rhs = stack.pop();
-        const auto lhs = stack.pop();
+        if (!values::is<Number>(peek(0)) || !values::is<Number>(peek(1)))
+        {
+            // TODO: implement
+            //  runtime_error();
+            return InterpretResult::RuntimeError;
+        }
+
+        const auto rhs = values::as<Number>(stack.pop());
+        const auto lhs = values::as<Number>(stack.pop());
         stack.push(std::invoke(std::forward<F>(func), lhs, rhs));
+        return InterpretResult::Ok;
     }
 
 
@@ -83,32 +103,38 @@ private:
             {
             case OpCode::Return:
             {
-                std::cout << stack.pop() << '\n';
+                std::cout << values::as<Number>(stack.pop()) << '\n';
                 return InterpretResult::Ok;
             }
             case OpCode::Negate:
             {
-                stack.push(-stack.pop());
+                if (values::is<Number>(peek(0)))
+                {
+                    // TODO: implement
+                    // runtime_error("Operand must be a number.");
+                    return InterpretResult::RuntimeError;
+                }
+                stack.push(values::make(-values::as<Number>(stack.pop())));
                 break;
             }
             case OpCode::Add:
             {
-                binary_op(std::plus<Value>{});
+                binary_op(std::plus<Number>{});
                 break;
             }
             case OpCode::Subtract:
             {
-                binary_op(std::minus<Value>{});
+                binary_op(std::minus<Number>{});
                 break;
             }
             case OpCode::Mutliply:
             {
-                binary_op(std::multiplies<Value>{});
+                binary_op(std::multiplies<Number>{});
                 break;
             }
             case OpCode::Divide:
             {
-                binary_op(std::divides<Value>{});
+                binary_op(std::divides<Number>{});
                 break;
             }
             case OpCode::Constant:
@@ -125,6 +151,11 @@ private:
     [[nodiscard]] constexpr auto read_byte_as() noexcept -> T
     {
         return static_cast<T>(chunk.data[ip++]);
+    }
+
+    auto peek(int offset) -> Value
+    {
+        return stack.at(-offset - 1);
     }
 
     void reset_stack()
