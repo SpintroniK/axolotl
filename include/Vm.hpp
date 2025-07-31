@@ -63,9 +63,9 @@ public:
         return run();
     }
 
-    [[nodiscard]] InterpretResult interpret(std::string_view source, Compiler& compiler)
+    [[nodiscard]] InterpretResult interpret(Compiler& compiler)
     {
-        auto compiled_chunk = compiler.compile(source);
+        auto compiled_chunk = compiler.compile();
         if (!compiled_chunk)
         {
             return InterpretResult::CompileError;
@@ -103,7 +103,7 @@ private:
             {
             case OpCode::Return:
             {
-                std::cout << values::as<Number>(stack.pop()) << '\n';
+                std::cout << "Return: " << values::as<Number>(stack.pop()) << '\n';
                 return InterpretResult::Ok;
             }
             case OpCode::Negate:
@@ -137,10 +137,47 @@ private:
                 binary_op(std::divides<Number>{});
                 break;
             }
+            case OpCode::Not:
+            {
+                stack.push(is_falsey(stack.pop()));
+                break;
+            }
             case OpCode::Constant:
             {
                 const auto constant = chunk.constants[read_byte_as<std::uint8_t>()];
                 stack.push(constant);
+                break;
+            }
+            case OpCode::Nil:
+            {
+                stack.push(values::make(double{ 0 }));
+                break;
+            }
+            case OpCode::True:
+            {
+                stack.push(values::make(true));
+                break;
+            }
+            case OpCode::False:
+            {
+                stack.push(values::make(false));
+                break;
+            }
+            case OpCode::Equal:
+            {
+                const auto b = stack.pop();
+                const auto a = stack.pop();
+                stack.push(a == b);
+                break;
+            }
+            case OpCode::Greater:
+            {
+                binary_op(std::greater<Value>{});
+                break;
+            }
+            case OpCode::Less:
+            {
+                binary_op(std::less<Value>{});
                 break;
             }
             }
@@ -153,14 +190,22 @@ private:
         return static_cast<T>(chunk.data[ip++]);
     }
 
+
     auto peek(int offset) -> Value
     {
-        return stack.at(-offset - 1);
+        return stack.at(offset);
     }
 
     void reset_stack()
     {
         stack.reset();
+    }
+
+
+    static auto is_falsey(const Value& value) -> bool
+    {
+        return (values::is<Number>(value) && values::as<Number>(value) == 0.) ||
+        (values::is<Boolean>(value) && !values::as<Boolean>(value));
     }
 
     static constexpr auto stack_size = 256U;

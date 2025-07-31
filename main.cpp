@@ -35,8 +35,7 @@ int main(int argc, char** argv)
 {
     const auto args = std::vector<std::string_view>{ argv, argv + argc };
 
-    Chunk chunk;
-
+    const auto chunk = Compiler{ "2 * 3 + 4" }.compile().value();
 
     debug::Debug::dissassemble_chunk(chunk, "chunk");
 

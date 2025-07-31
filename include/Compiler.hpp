@@ -42,8 +42,8 @@ struct ParseRule
 
 struct Parser
 {
-    Token previous;
-    Token current;
+    Token previous{ Token{ TokenType::Eof } };
+    Token current{ Token{ TokenType::Eof } };
     bool had_error = false;
     bool panic_mode = false;
 };
@@ -51,7 +51,11 @@ struct Parser
 class Compiler
 {
 public:
-    std::optional<Chunk> compile(std::string_view source)
+    explicit Compiler(std::string_view source) : scanner{ source }
+    {
+    }
+
+    std::optional<Chunk> compile()
     {
         compiling_chunk = Chunk{};
 
@@ -128,6 +132,17 @@ private:
         emit_constant(values::make(val));
     }
 
+    auto literal() -> void
+    {
+        switch (parser.previous.get_type())
+        {
+        case TokenType::FALSE: emit_byte(OpCode::False); break;
+        case TokenType::NIL: emit_byte(OpCode::Nil); break;
+        case TokenType::TRUE: emit_byte(OpCode::True); break;
+        default: return;
+        }
+    }
+
     auto grouping() -> void
     {
         expression();
@@ -143,6 +158,7 @@ private:
         switch (operator_type)
         {
         case TokenType::MINUS: emit_byte(OpCode::Negate); break;
+        case TokenType::BANG: emit_byte(OpCode::Not); break;
         default: return;
         }
     }
@@ -156,6 +172,12 @@ private:
 
         switch (operator_type)
         {
+        case TokenType::BANG_EQUAL: emit_bytes(OpCode::Equal, OpCode::Not); break;
+        case TokenType::EQUAL_EQUAL: emit_byte(OpCode::Equal); break;
+        case TokenType::GREATER: emit_byte(OpCode::Greater); break;
+        case TokenType::GREATER_EQUAL: emit_bytes(OpCode::Less, OpCode::Not); break;
+        case TokenType::LESS: emit_byte(OpCode::Less); break;
+        case TokenType::LESS_EQUAL: emit_bytes(OpCode::Greater, OpCode::Not); break;
         case TokenType::PLUS: emit_byte(OpCode::Add); break;
         case TokenType::MINUS: emit_byte(OpCode::Subtract); break;
         case TokenType::STAR: emit_byte(OpCode::Mutliply); break;
@@ -247,7 +269,7 @@ private:
         (emit_byte(bytes), ...);
     }
 
-    [[nodiscard]] auto current_chunk() const noexcept -> Chunk
+    [[nodiscard]] auto current_chunk() noexcept -> Chunk&
     {
         return compiling_chunk;
     }
@@ -270,13 +292,13 @@ private:
         { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },
         { .prefix = nullptr, .infix = &Compiler::binary, .precedence = Precedence::FACTOR },
         { .prefix = nullptr, .infix = &Compiler::binary, .precedence = Precedence::FACTOR },
-        { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },
-        { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },
-        { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },
-        { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },
-        { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },
-        { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },
-        { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },
+        { .prefix = &Compiler::unary, .infix = nullptr, .precedence = Precedence::NONE },
+        { .prefix = nullptr, .infix = &Compiler::binary, .precedence = Precedence::EQUALITY },
+        { .prefix = nullptr, .infix = &Compiler::binary, .precedence = Precedence::EQUALITY },
+        { .prefix = nullptr, .infix = &Compiler::binary, .precedence = Precedence::COMPARISON },
+        { .prefix = nullptr, .infix = &Compiler::binary, .precedence = Precedence::COMPARISON },
+        { .prefix = nullptr, .infix = &Compiler::binary, .precedence = Precedence::COMPARISON },
+        { .prefix = nullptr, .infix = &Compiler::binary, .precedence = Precedence::COMPARISON },
         { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },
         { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },
         { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },
@@ -284,17 +306,17 @@ private:
         { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },
         { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },
         { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },
+        { .prefix = &Compiler::literal, .infix = nullptr, .precedence = Precedence::NONE },
+        { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },
+        { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },
+        { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },
+        { .prefix = &Compiler::literal, .infix = nullptr, .precedence = Precedence::NONE },
         { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },
         { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },
         { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },
         { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },
         { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },
-        { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },
-        { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },
-        { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },
-        { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },
-        { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },
-        { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },
+        { .prefix = &Compiler::literal, .infix = nullptr, .precedence = Precedence::NONE },
         { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },
         { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },
         { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },

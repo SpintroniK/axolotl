@@ -47,6 +47,13 @@ namespace debug
             case OpCode::Mutliply: return simple_instruction("MULTIPLY", offset);
             case OpCode::Divide: return simple_instruction("DIVIDE", offset);
             case OpCode::Return: return simple_instruction("RETURN", offset);
+            case OpCode::Nil: return simple_instruction("NIL", offset);
+            case OpCode::True: return simple_instruction("TRUE", offset);
+            case OpCode::False: return simple_instruction("FALSE", offset);
+            case OpCode::Equal: return simple_instruction("EQUAL", offset);
+            case OpCode::Greater: return simple_instruction("GREATER", offset);
+            case OpCode::Less: return simple_instruction("LESS", offset);
+            case OpCode::Not: return simple_instruction("NOT", offset);
             default:
                 std::cout << "[DEBUG] Unknown opcode: " << static_cast<int>(instruction) << '\n';
                 return offset + 1;

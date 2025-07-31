@@ -96,9 +96,15 @@ private:
 class Scanner
 {
 public:
+    explicit Scanner(std::string_view source) : source{ source }
+    {
+    }
+
     Token scan_token()
     {
-        start = 0;
+
+        skip_white_space();
+        start = current;
 
         if (is_at_end())
         {

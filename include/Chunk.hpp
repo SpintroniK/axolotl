@@ -9,11 +9,18 @@
 enum class OpCode : std::uint8_t
 {
     Constant,
-    Negate,
+    Nil,
+    True,
+    False,
+    Equal,
+    Greater,
+    Less,
     Add,
     Subtract,
     Mutliply,
     Divide,
+    Not,
+    Negate,
     Return,
 };
 
