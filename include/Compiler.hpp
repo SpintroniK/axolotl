@@ -190,7 +190,8 @@ private:
     auto parse_precedence(Precedence precedence) -> void
     {
         advance();
-        auto prefix_rule = get_rule(parser.previous.get_type()).prefix;
+        const auto type = parser.previous.get_type();
+        auto prefix_rule = get_rule(type).prefix;
         if (prefix_rule == nullptr)
         {
             error("Expected expression.");

@@ -3,7 +3,6 @@
 #include <cctype>
 #include <cstddef>
 #include <cstdint>
-#include <iterator>
 #include <string_view>
 
 enum class TokenType : std::uint8_t
@@ -283,19 +282,17 @@ private:
 
     auto check_keyword(std::size_t beg, std::string_view rest, TokenType type) -> TokenType
     {
-        // TODO: requires testing
         const auto expected = std::string_view{ source.begin() + start + beg, source.begin() + start + beg + rest.length() };
         if (current - start == start + rest.length() && rest == expected)
         {
             return type;
         }
 
-        return TokenType::IDENTIFIER;
+        return type;
     }
 
     auto identifier_type() -> TokenType
     {
-        // TODO: requires testing
         switch (source[start])
         {
         case 'a': return check_keyword(1, "nd", TokenType::AND);
