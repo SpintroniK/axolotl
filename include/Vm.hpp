@@ -10,6 +10,7 @@
 #include <functional>
 #include <iostream>
 #include <string_view>
+#include <type_traits>
 #include <variant>
 
 enum class InterpretResult : std::uint8_t
@@ -78,19 +79,44 @@ public:
     }
 
 private:
-    template <typename F>
-    InterpretResult binary_op(F&& func)
+    template <typename Func>
+    InterpretResult binary_op()
     {
-        if (!values::is<Number>(peek(0)) || !values::is<Number>(peek(1)))
-        {
-            // TODO: implement
-            //  runtime_error();
-            return InterpretResult::RuntimeError;
-        }
+        const auto lhs = stack.pop();
+        const auto rhs = stack.pop();
 
-        const auto rhs = values::as<Number>(stack.pop());
-        const auto lhs = values::as<Number>(stack.pop());
-        stack.push(std::invoke(std::forward<F>(func), lhs, rhs));
+        std::visit(
+        [&](const auto& lhs_val, const auto& rhs_val)
+        {
+            using LhsType = std::decay_t<decltype(lhs_val)>;
+            using RhsType = std::decay_t<decltype(rhs_val)>;
+
+            // Ensure the types are the same for the operation
+            if constexpr (std::is_same_v<LhsType, RhsType>)
+            {
+                if constexpr (std::is_same_v<LhsType, Number>)
+                {
+                    // Push the result of applying the function back onto the stack
+                    stack.push(Func{}(lhs_val, rhs_val));
+                }
+                else if constexpr (std::is_same_v<LhsType, String>)
+                {
+                    // Handle string concatenation
+                    stack.push(lhs_val + rhs_val);
+                }
+                else
+                {
+                    // Handle unsupported types
+                    throw std::runtime_error("Unsupported type for binary operation");
+                }
+            }
+            else
+            {
+                // Handle type mismatch here
+            }
+        },
+        rhs, lhs);
+
         return InterpretResult::Ok;
     }
 
@@ -120,22 +146,22 @@ private:
             }
             case OpCode::Add:
             {
-                binary_op(std::plus<Number>{});
+                binary_op<std::plus<>>();
                 break;
             }
             case OpCode::Subtract:
             {
-                binary_op(std::minus<Number>{});
+                binary_op<std::minus<>>();
                 break;
             }
             case OpCode::Mutliply:
             {
-                binary_op(std::multiplies<Number>{});
+                binary_op<std::multiplies<>>();
                 break;
             }
             case OpCode::Divide:
             {
-                binary_op(std::divides<Number>{});
+                binary_op<std::divides<>>();
                 break;
             }
             case OpCode::Not:
@@ -173,12 +199,12 @@ private:
             }
             case OpCode::Greater:
             {
-                binary_op(std::greater<Value>{});
+                binary_op<std::greater<>>();
                 break;
             }
             case OpCode::Less:
             {
-                binary_op(std::less<Value>{});
+                binary_op<std::less<>>();
                 break;
             }
             }

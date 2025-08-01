@@ -143,6 +143,11 @@ private:
         }
     }
 
+    auto string() -> void
+    {
+        emit_constant(std::string{ parser.previous.get_lexme().begin() + 1, parser.previous.get_lexme().end() - 1 });
+    }
+
     auto grouping() -> void
     {
         expression();
@@ -302,7 +307,7 @@ private:
         { .prefix = nullptr, .infix = &Compiler::binary, .precedence = Precedence::COMPARISON },
         { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },
         { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },
-        { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },
+        { .prefix = &Compiler::string, .infix = nullptr, .precedence = Precedence::NONE },
         { .prefix = &Compiler::number, .infix = nullptr, .precedence = Precedence::NONE },
         { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },
         { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },

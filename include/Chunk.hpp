@@ -42,7 +42,7 @@ public:
         lines.push_back(line);
     }
 
-    std::size_t add_constant(Value value)
+    std::size_t add_constant(const Value& value)
     {
         constants.emplace_back(value);
         return constants.size() - 1;

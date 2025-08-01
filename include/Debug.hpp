@@ -7,6 +7,7 @@
 #include <iomanip>
 #include <iostream>
 #include <string_view>
+#include <variant>
 
 namespace debug
 {
@@ -80,7 +81,7 @@ namespace debug
         template <typename T>
         static void print_value(const T& value)
         {
-            std::cout << values::as<Number>(value);
+            std::visit([](const auto& value) { std::cout << value; }, value);
         }
     };
 } // namespace debug

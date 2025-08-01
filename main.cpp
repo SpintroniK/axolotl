@@ -35,9 +35,9 @@ int main(int argc, char** argv)
 {
     const auto args = std::vector<std::string_view>{ argv, argv + argc };
 
-    const auto chunk = Compiler{ "!(5 - 4 > 3 * 2 == !nil)" }.compile().value();
+    const auto chunk = Compiler{ R"===("hello" + " " + "world")===" }.compile().value();
 
-    debug::Debug::dissassemble_chunk(chunk, "chunk");
+    // debug::Debug::dissassemble_chunk(chunk, "chunk");
 
     Vm vm;
     const auto result = vm.interpret(chunk);

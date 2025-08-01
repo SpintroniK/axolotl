@@ -1,11 +1,14 @@
 #pragma once
 
+#include <string>
 #include <variant>
 #include <vector>
 
 using Number = double;
 using Boolean = bool;
-using Value = std::variant<Boolean, Number>;
+using String = std::string;
+
+using Value = std::variant<Boolean, Number, String>;
 using ValueArray = std::vector<Value>;
 
 namespace values
