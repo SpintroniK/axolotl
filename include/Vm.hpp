@@ -10,6 +10,7 @@
 #include <functional>
 #include <iostream>
 #include <string_view>
+#include <variant>
 
 enum class InterpretResult : std::uint8_t
 {
@@ -103,8 +104,7 @@ private:
             {
             case OpCode::Return:
             {
-                // TODO: get the correct type before cout
-                std::cout << "Return: " << values::as<Number>(stack.pop()) << '\n';
+                std::visit([](const auto& value) { std::cout << "Return: " << value << '\n'; }, stack.pop());
                 return InterpretResult::Ok;
             }
             case OpCode::Negate:
