@@ -55,6 +55,7 @@ namespace debug
             case OpCode::Pop: return simple_instruction("POP", offset);
             case OpCode::GetGlobal: return constant_instruction("GET_GLOBAL", chunk, offset);
             case OpCode::DefineGlobal: return constant_instruction("DEFINE_GLOBAL", chunk, offset);
+            case OpCode::SetGlobal: return constant_instruction("SET_GLOBAL", chunk, offset);
             case OpCode::Equal: return simple_instruction("EQUAL", offset);
             case OpCode::Greater: return simple_instruction("GREATER", offset);
             case OpCode::Less: return simple_instruction("LESS", offset);

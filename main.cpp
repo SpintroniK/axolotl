@@ -35,14 +35,15 @@ int main(int argc, char** argv)
 {
     const auto args = std::vector<std::string_view>{ argv, argv + argc };
 
-    const auto chunk = Compiler{ R"===(var beverage = "cafe au lait";
-var breakfast = "beignets with " + beverage;
+    const auto chunk = Compiler{ R"===(var breakfast = "beignets";
+var beverage = "cafe au lait";
+breakfast = "beignets with " + beverage;
 print breakfast;
 )===" }
                        .compile()
                        .value();
 
-    // debug::Debug::dissassemble_chunk(chunk, "chunk");
+    debug::Debug::dissassemble_chunk(chunk, "chunk");
 
     Vm vm;
     const auto result = vm.interpret(chunk);

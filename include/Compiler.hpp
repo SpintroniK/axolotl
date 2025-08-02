@@ -31,7 +31,7 @@ enum class Precedence : std::uint8_t
 };
 
 class Compiler;
-using ParseFn = void (Compiler::*)();
+using ParseFn = void (Compiler::*)(bool);
 
 struct ParseRule
 {
@@ -169,7 +169,7 @@ private:
         return constant;
     }
 
-    auto number() -> void
+    auto number([[maybe_unused]] bool can_assign) -> void
     {
         Number val{};
         const auto result = std::from_chars(parser.previous.get_lexme().begin(), parser.previous.get_lexme().end(), val);
@@ -177,7 +177,7 @@ private:
         emit_constant(values::make(val));
     }
 
-    auto literal() -> void
+    auto literal([[maybe_unused]] bool can_assign) -> void
     {
         switch (parser.previous.get_type())
         {
@@ -188,30 +188,39 @@ private:
         }
     }
 
-    auto string() -> void
+    auto string([[maybe_unused]] bool can_assign) -> void
     {
         emit_constant(std::string{ parser.previous.get_lexme().begin() + 1, parser.previous.get_lexme().end() - 1 });
     }
 
-    auto variable() -> void
+    auto variable(bool can_assign) -> void
     {
-        named_variable(parser.previous);
+        named_variable(parser.previous, can_assign);
     }
 
-    auto named_variable(const Token& token) -> void
+    auto named_variable(const Token& token, bool can_assign) -> void
     {
-        const auto args = identifier_constant(token);
-        emit_bytes(OpCode::GetGlobal, args);
+        const auto arg = identifier_constant(token);
+
+        if (can_assign && match(TokenType::EQUAL))
+        {
+            expression();
+            emit_bytes(OpCode::SetGlobal, arg);
+        }
+        else
+        {
+            emit_bytes(OpCode::GetGlobal, arg);
+        }
     }
 
 
-    auto grouping() -> void
+    auto grouping([[maybe_unused]] bool can_assign) -> void
     {
         expression();
         consume(TokenType::RIGHT_PAREN, "Expect ')' after expression.");
     }
 
-    auto unary() -> void
+    auto unary([[maybe_unused]] bool can_assign) -> void
     {
         const auto operator_type = parser.previous.get_type();
 
@@ -226,7 +235,7 @@ private:
     }
 
 
-    auto binary() -> void
+    auto binary([[maybe_unused]] bool can_assign) -> void
     {
         const auto operator_type = parser.previous.get_type();
         ParseRule rule = get_rule(operator_type);
@@ -260,13 +269,21 @@ private:
             return;
         }
 
-        std::invoke(prefix_rule, this);
+        const auto can_assign = precedence <= Precedence::ASSIGNMENT;
+
+        std::invoke(prefix_rule, this, can_assign);
+
 
         while (precedence <= get_rule(parser.current.get_type()).precedence)
         {
             advance();
             auto infix_rule = get_rule(parser.previous.get_type()).infix;
-            std::invoke(infix_rule, this);
+            std::invoke(infix_rule, this, can_assign);
+        }
+
+        if (can_assign && match(TokenType::EQUAL))
+        {
+            error("Invalid assignment target.");
         }
     }
 
@@ -342,6 +359,10 @@ private:
         if (match(TokenType::PRINT))
         {
             print_statement();
+        }
+        else
+        {
+            expression_statement();
         }
     }
 

@@ -222,6 +222,18 @@ private:
                 globals[name] = stack.pop();
                 break;
             }
+            case OpCode::SetGlobal:
+            {
+                const auto constant = chunk.constants[read_byte_as<std::uint8_t>()];
+                const auto name = std::get<String>(constant);
+                if (!globals.contains(name))
+                {
+                    // TODO: handle error
+                    return InterpretResult::RuntimeError;
+                }
+                globals[name] = peek(0);
+                break;
+            }
             case OpCode::Equal:
             {
                 const auto b = stack.pop();
