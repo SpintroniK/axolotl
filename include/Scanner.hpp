@@ -283,12 +283,12 @@ private:
     auto check_keyword(std::size_t beg, std::string_view rest, TokenType type) -> TokenType
     {
         const auto expected = std::string_view{ source.begin() + start + beg, source.begin() + start + beg + rest.length() };
-        if (current - start == start + rest.length() && rest == expected)
+        if (rest == expected)
         {
             return type;
         }
 
-        return type;
+        return TokenType::IDENTIFIER;
     }
 
     auto identifier_type() -> TokenType
