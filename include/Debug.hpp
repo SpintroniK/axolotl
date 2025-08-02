@@ -43,6 +43,7 @@ namespace debug
             {
             case OpCode::Constant: return constant_instruction("CONSTANT", chunk, offset);
             case OpCode::Negate: return simple_instruction("NEGATE", offset);
+            case OpCode::Print: simple_instruction("PRINT", offset);
             case OpCode::Add: return simple_instruction("ADD", offset);
             case OpCode::Subtract: return simple_instruction("SUBTRACT", offset);
             case OpCode::Mutliply: return simple_instruction("MULTIPLY", offset);

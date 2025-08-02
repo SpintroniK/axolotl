@@ -128,9 +128,13 @@ private:
             const auto instruction = read_byte_as<OpCode>();
             switch (instruction)
             {
+            case OpCode::Print:
+            {
+                std::visit([](const auto& value) { std::cout << value << '\n'; }, stack.pop());
+                break;
+            }
             case OpCode::Return:
             {
-                std::visit([](const auto& value) { std::cout << "Return: " << value << '\n'; }, stack.pop());
                 return InterpretResult::Ok;
             }
             case OpCode::Negate:

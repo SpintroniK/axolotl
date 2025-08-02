@@ -63,8 +63,11 @@ public:
         parser.had_error = false;
 
         advance();
-        expression();
-        consume(TokenType::Eof, "Expected end of expression.");
+
+        while (!match(TokenType::Eof))
+        {
+            declaration();
+        }
 
         end_compiler();
 
@@ -210,6 +213,41 @@ private:
             advance();
             auto infix_rule = get_rule(parser.previous.get_type()).infix;
             std::invoke(infix_rule, this);
+        }
+    }
+
+    [[nodiscard]] auto check(TokenType type) const -> bool
+    {
+        return parser.current.get_type() == type;
+    }
+
+    auto match(TokenType type) -> bool
+    {
+        if (!check(type))
+        {
+            return false;
+        }
+        advance();
+        return true;
+    }
+
+    auto declaration() -> void
+    {
+        statement();
+    }
+
+    auto print_statement() -> void
+    {
+        expression();
+        consume(TokenType::SEMICOLON, "Expect ';' after value.");
+        emit_byte(OpCode::Print);
+    }
+
+    auto statement() -> void
+    {
+        if (match(TokenType::PRINT))
+        {
+            print_statement();
         }
     }
 
