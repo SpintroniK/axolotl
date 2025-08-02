@@ -35,10 +35,7 @@ int main(int argc, char** argv)
 {
     const auto args = std::vector<std::string_view>{ argv, argv + argc };
 
-    const auto chunk = Compiler{ R"===(print 1 + 2;
-         print 3 * 4;)===" }
-                       .compile()
-                       .value();
+    const auto chunk = Compiler{ R"===(var abc = 1;)===" }.compile().value();
 
     // debug::Debug::dissassemble_chunk(chunk, "chunk");
 

@@ -12,6 +12,8 @@ enum class OpCode : std::uint8_t
     Nil,
     True,
     False,
+    Pop,
+    DefineGlobal,
     Equal,
     Greater,
     Less,

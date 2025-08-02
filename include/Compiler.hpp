@@ -10,6 +10,7 @@
 #include <iostream>
 #include <limits>
 #include <optional>
+#include <string>
 #include <string_view>
 #include <type_traits>
 
@@ -111,6 +112,47 @@ private:
         parse_precedence(Precedence::ASSIGNMENT);
     }
 
+    auto var_declaration() -> void
+    {
+        const auto global = parse_variable("Expect variable name.");
+
+        if (match(TokenType::EQUAL))
+        {
+            expression();
+        }
+        else
+        {
+            emit_byte(OpCode::Nil);
+        }
+
+        consume(TokenType::SEMICOLON, "Expect ';' after variable declaration.");
+
+        define_variable(global);
+    }
+
+    auto parse_variable(std::string_view error_message) -> std::uint8_t
+    {
+        consume(TokenType::IDENTIFIER, error_message);
+        return identifier_constant(parser.previous);
+    }
+
+    auto identifier_constant(const Token& token) -> std::uint8_t
+    {
+        return make_constant(std::string{ token.get_lexme().begin(), token.get_lexme().end() });
+    }
+
+    auto define_variable(std::uint8_t global) -> void
+    {
+        emit_bytes(OpCode::DefineGlobal, global);
+    }
+
+    auto expression_statement() -> void
+    {
+        expression();
+        consume(TokenType::SEMICOLON, "Expect ';' after expression.");
+        emit_byte(OpCode::Pop);
+    }
+
     auto emit_constant(const Value& value) -> void
     {
         emit_bytes(OpCode::Constant, make_constant(value));
@@ -150,6 +192,18 @@ private:
     {
         emit_constant(std::string{ parser.previous.get_lexme().begin() + 1, parser.previous.get_lexme().end() - 1 });
     }
+
+    auto variable() -> void
+    {
+        named_variable(parser.previous);
+    }
+
+    auto named_variable(const Token& token) -> void
+    {
+        const auto arg = identifier_constant(token);
+        // emit_bytes()
+    }
+
 
     auto grouping() -> void
     {
@@ -233,7 +287,19 @@ private:
 
     auto declaration() -> void
     {
-        statement();
+        if (match(TokenType::VAR))
+        {
+            var_declaration();
+        }
+        else
+        {
+            statement();
+        }
+
+        if (parser.panic_mode)
+        {
+            synchronize();
+        }
     }
 
     auto print_statement() -> void
@@ -241,6 +307,34 @@ private:
         expression();
         consume(TokenType::SEMICOLON, "Expect ';' after value.");
         emit_byte(OpCode::Print);
+    }
+
+    auto synchronize() -> void
+    {
+        parser.panic_mode = false;
+
+        while (parser.current.get_type() != TokenType::Eof)
+        {
+            if (parser.previous.get_type() == TokenType::SEMICOLON)
+            {
+                return;
+            }
+            switch (parser.current.get_type())
+            {
+            case TokenType::CLASS:
+            case TokenType::FUN:
+            case TokenType::VAR:
+            case TokenType::FOR:
+            case TokenType::IF:
+            case TokenType::WHILE:
+            case TokenType::PRINT:
+            case TokenType::RETURN: return;
+
+            default:; // Do nothing.
+            }
+
+            advance();
+        }
     }
 
     auto statement() -> void
@@ -344,7 +438,7 @@ private:
         { .prefix = nullptr, .infix = &Compiler::binary, .precedence = Precedence::COMPARISON },
         { .prefix = nullptr, .infix = &Compiler::binary, .precedence = Precedence::COMPARISON },
         { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },
-        { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },
+        { .prefix = &Compiler::variable, .infix = nullptr, .precedence = Precedence::NONE },
         { .prefix = &Compiler::string, .infix = nullptr, .precedence = Precedence::NONE },
         { .prefix = &Compiler::number, .infix = nullptr, .precedence = Precedence::NONE },
         { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },

@@ -9,6 +9,8 @@
 #include <cstdint>
 #include <functional>
 #include <iostream>
+#include <map>
+#include <string>
 #include <string_view>
 #include <type_traits>
 #include <variant>
@@ -194,6 +196,18 @@ private:
                 stack.push(values::make(false));
                 break;
             }
+            case OpCode::Pop:
+            {
+                stack.pop();
+                break;
+            }
+            case OpCode::DefineGlobal:
+            {
+                const auto constant = chunk.constants[read_byte_as<std::uint8_t>()];
+                const auto name = std::get<String>(constant);
+                globals[name] = stack.pop();
+                break;
+            }
             case OpCode::Equal:
             {
                 const auto b = stack.pop();
@@ -244,4 +258,5 @@ private:
     Chunk chunk;
     std::size_t ip = 0;
     Stack<Value, stack_size> stack;
+    std::map<std::string, Value> globals;
 };

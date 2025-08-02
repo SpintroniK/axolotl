@@ -52,6 +52,8 @@ namespace debug
             case OpCode::Nil: return simple_instruction("NIL", offset);
             case OpCode::True: return simple_instruction("TRUE", offset);
             case OpCode::False: return simple_instruction("FALSE", offset);
+            case OpCode::Pop: return simple_instruction("POP", offset);
+            case OpCode::DefineGlobal: return constant_instruction("DEFINE_GLOBAL", chunk, offset);
             case OpCode::Equal: return simple_instruction("EQUAL", offset);
             case OpCode::Greater: return simple_instruction("GREATER", offset);
             case OpCode::Less: return simple_instruction("LESS", offset);
