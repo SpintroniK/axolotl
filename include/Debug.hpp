@@ -53,6 +53,8 @@ namespace debug
             case OpCode::True: return simple_instruction("TRUE", offset);
             case OpCode::False: return simple_instruction("FALSE", offset);
             case OpCode::Pop: return simple_instruction("POP", offset);
+            case OpCode::GetLocal: return byte_instruction("GET_LOCAL", chunk, offset);
+            case OpCode::Setlocal: return byte_instruction("SET_LOCAL", chunk, offset);
             case OpCode::GetGlobal: return constant_instruction("GET_GLOBAL", chunk, offset);
             case OpCode::DefineGlobal: return constant_instruction("DEFINE_GLOBAL", chunk, offset);
             case OpCode::SetGlobal: return constant_instruction("SET_GLOBAL", chunk, offset);
@@ -66,6 +68,14 @@ namespace debug
             }
 
             return offset;
+        }
+
+        static std::size_t byte_instruction(std::string_view name, const Chunk& chunk, std::size_t offset)
+        {
+            const auto slot = chunk.data[offset + 1];
+
+            std::cout << std::left << std::setw(16) << name << std::setw(4) << static_cast<signed char>(slot) << '\n';
+            return offset + 2;
         }
 
         static std::size_t simple_instruction(std::string_view name, std::size_t offset)

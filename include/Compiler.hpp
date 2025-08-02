@@ -5,6 +5,7 @@
 #include "Scanner.hpp"
 #include "Value.hpp"
 
+#include <array>
 #include <charconv>
 #include <functional>
 #include <iostream>
@@ -40,6 +41,112 @@ struct ParseRule
     Precedence precedence;
 };
 
+class Local
+{
+public:
+    Local() : token{ TokenType::Eof }
+    {
+    }
+
+    Local(const Token& token, int depth) : token{ token }, depth{ depth }
+    {
+    }
+
+    [[nodiscard]] auto get_depth() const noexcept -> int
+    {
+        return depth;
+    }
+
+    [[nodiscard]] auto get_token() const noexcept -> Token
+    {
+        return token;
+    }
+
+private:
+    Token token{ TokenType::Eof };
+    int depth = -1;
+};
+
+class CompilerState
+{
+public:
+    auto begin_scope() noexcept -> void
+    {
+        scope_depth++;
+    }
+
+    auto end_scope() noexcept -> void
+    {
+        scope_depth--;
+    }
+
+
+    template <typename F>
+    auto clean_scope(F func) -> void
+    {
+        while (local_count > 0 && locals[local_count - 1].get_depth() > scope_depth)
+        {
+            std::invoke(func);
+            local_count--;
+        }
+    }
+
+    auto add_local(const Token& token) -> bool
+    {
+        if (local_count == locals.size() - 1)
+        {
+            return false;
+        }
+
+        locals[local_count++] = Local{ token, static_cast<int>(scope_depth) };
+
+        return true;
+    }
+
+    [[nodiscard]] auto find(const Token& token) const -> int
+    {
+        if (local_count == 0)
+        {
+            return -1;
+        }
+
+        for (int i = static_cast<int>(local_count - 1); i >= 0; i--)
+        {
+            const Local& local = locals[i];
+            if (local.get_depth() != -1 && local.get_depth() < scope_depth)
+            {
+                break;
+            }
+
+            if (token.get_lexme() == local.get_token().get_lexme())
+            {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
+    [[nodiscard]] auto get_scope_depth() const noexcept -> std::size_t
+    {
+        return scope_depth;
+    }
+
+    [[nodiscard]] auto get_local_count() const noexcept -> std::size_t
+    {
+        return local_count;
+    }
+
+    [[nodiscard]] auto get_local(std::size_t index) const noexcept -> Local
+    {
+        return locals[index];
+    }
+
+private:
+    std::array<Local, std::numeric_limits<std::uint8_t>::max() + 1> locals{};
+    std::size_t local_count = 0;
+    std::size_t scope_depth = 0;
+};
 
 struct Parser
 {
@@ -59,6 +166,7 @@ public:
     std::optional<Chunk> compile()
     {
         compiling_chunk = Chunk{};
+        current_state = CompilerState{};
 
         parser.panic_mode = false;
         parser.had_error = false;
@@ -112,6 +220,16 @@ private:
         parse_precedence(Precedence::ASSIGNMENT);
     }
 
+    auto block() -> void
+    {
+        while (!check(TokenType::RIGHT_BRACE) && !check(TokenType::Eof))
+        {
+            declaration();
+        }
+
+        consume(TokenType::RIGHT_BRACE, "Expect '}' after block.");
+    }
+
     auto var_declaration() -> void
     {
         const auto global = parse_variable("Expect variable name.");
@@ -133,6 +251,14 @@ private:
     auto parse_variable(std::string_view error_message) -> std::uint8_t
     {
         consume(TokenType::IDENTIFIER, error_message);
+
+        declare_variable();
+
+        if (current_state.get_scope_depth() > 0)
+        {
+            return 0;
+        }
+
         return identifier_constant(parser.previous);
     }
 
@@ -141,8 +267,36 @@ private:
         return make_constant(std::string{ token.get_lexme().begin(), token.get_lexme().end() });
     }
 
+    auto add_local(const Token& token) -> void
+    {
+        if (!current_state.add_local(token))
+        {
+            error("Too many local variables in function.");
+        }
+    }
+
+    auto declare_variable() -> void
+    {
+        if (current_state.get_scope_depth() == 0)
+        {
+            return;
+        }
+
+        if (current_state.find(parser.previous) != -1)
+        {
+            error("Already a variable with this name in this scope.");
+        }
+
+        add_local(parser.previous);
+    }
+
     auto define_variable(std::uint8_t global) -> void
     {
+        if (current_state.get_scope_depth() > 0)
+        {
+            return;
+        }
+
         emit_bytes(OpCode::DefineGlobal, global);
     }
 
@@ -200,17 +354,32 @@ private:
 
     auto named_variable(const Token& token, bool can_assign) -> void
     {
-        const auto arg = identifier_constant(token);
+        auto arg = resolve_local(token);
+
+        auto get_op = static_cast<std::uint8_t>(OpCode::GetLocal);
+        auto set_op = static_cast<std::uint8_t>(OpCode::Setlocal);
+
+        if (arg == -1)
+        {
+            arg = identifier_constant(token);
+            get_op = static_cast<std::uint8_t>(OpCode::GetGlobal);
+            set_op = static_cast<std::uint8_t>(OpCode::SetGlobal);
+        }
 
         if (can_assign && match(TokenType::EQUAL))
         {
             expression();
-            emit_bytes(OpCode::SetGlobal, arg);
+            emit_bytes(set_op, arg);
         }
         else
         {
-            emit_bytes(OpCode::GetGlobal, arg);
+            emit_bytes(get_op, arg);
         }
+    }
+
+    auto resolve_local(const Token& token) -> int
+    {
+        return current_state.find(token);
     }
 
 
@@ -360,6 +529,12 @@ private:
         {
             print_statement();
         }
+        else if (match(TokenType::LEFT_BRACE))
+        {
+            begin_scope();
+            block();
+            end_scope();
+        }
         else
         {
             expression_statement();
@@ -409,6 +584,17 @@ private:
         {
             debug::Debug::dissassemble_chunk(current_chunk(), "code");
         }
+    }
+
+    auto begin_scope() -> void
+    {
+        current_state.begin_scope();
+    }
+
+    auto end_scope() -> void
+    {
+        current_state.end_scope();
+        current_state.clean_scope([&] { emit_byte(OpCode::Pop); });
     }
 
     auto emit_return() -> void
@@ -485,4 +671,5 @@ private:
     Parser parser;
     Scanner scanner;
     Chunk compiling_chunk;
+    CompilerState current_state;
 };

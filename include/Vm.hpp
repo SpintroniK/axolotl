@@ -47,6 +47,11 @@ public:
         return data[index];
     }
 
+    auto set(std::size_t index, const T& value) -> void
+    {
+        data[index] = value;
+    }
+
     [[nodiscard]] auto top() const noexcept -> std::size_t
     {
         return stack_top;
@@ -199,6 +204,18 @@ private:
             case OpCode::Pop:
             {
                 stack.pop();
+                break;
+            }
+            case OpCode::GetLocal:
+            {
+                const auto slot = read_byte_as<std::uint8_t>();
+                stack.push(stack.at(slot));
+                break;
+            }
+            case OpCode::Setlocal:
+            {
+                const auto slot = read_byte_as<std::uint8_t>();
+                stack.set(slot, peek(0));
                 break;
             }
             case OpCode::GetGlobal:
