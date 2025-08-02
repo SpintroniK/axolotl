@@ -200,8 +200,8 @@ private:
 
     auto named_variable(const Token& token) -> void
     {
-        const auto arg = identifier_constant(token);
-        // emit_bytes()
+        const auto args = identifier_constant(token);
+        emit_bytes(OpCode::GetGlobal, args);
     }
 
 

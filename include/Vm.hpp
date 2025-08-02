@@ -201,6 +201,20 @@ private:
                 stack.pop();
                 break;
             }
+            case OpCode::GetGlobal:
+            {
+                const auto constant = chunk.constants[read_byte_as<std::uint8_t>()];
+                const auto name = std::get<String>(constant);
+                if (!globals.contains(name))
+                {
+                    // TODO: implement
+                    //  runtime error => Undefined variable ''.
+                    return InterpretResult::RuntimeError;
+                }
+
+                stack.push(globals[name]);
+                break;
+            }
             case OpCode::DefineGlobal:
             {
                 const auto constant = chunk.constants[read_byte_as<std::uint8_t>()];

@@ -13,6 +13,7 @@ enum class OpCode : std::uint8_t
     True,
     False,
     Pop,
+    GetGlobal,
     DefineGlobal,
     Equal,
     Greater,
