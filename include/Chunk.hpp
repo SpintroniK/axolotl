@@ -28,6 +28,7 @@ enum class OpCode : std::uint8_t
     Not,
     Negate,
     Print,
+    JumpIfFalse,
     Return,
 };
 
@@ -43,16 +44,27 @@ class Chunk
 
 public:
     template <typename T>
-    void write(T byte, std::size_t line)
+    auto write(T byte, std::size_t line) -> void
     {
         data.emplace_back(static_cast<std::byte>(byte));
         lines.push_back(line);
     }
 
-    std::size_t add_constant(const Value& value)
+    auto add_constant(const Value& value) -> std::size_t
     {
         constants.emplace_back(value);
         return constants.size() - 1;
+    }
+
+    template <typename T>
+    auto set(std::size_t index, const T& value) -> void
+    {
+        data[index] = value;
+    }
+
+    [[nodiscard]] auto size() const noexcept -> std::size_t
+    {
+        return data.size();
     }
 
 private:

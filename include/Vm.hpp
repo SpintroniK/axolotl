@@ -144,6 +144,15 @@ private:
             {
                 return InterpretResult::Ok;
             }
+            case OpCode::JumpIfFalse:
+            {
+                const auto offset = read_short();
+                if (is_falsey(peek(0)))
+                {
+                    ip += offset;
+                }
+                break;
+            }
             case OpCode::Negate:
             {
                 if (values::is<Number>(peek(0)))
@@ -276,6 +285,12 @@ private:
     [[nodiscard]] constexpr auto read_byte_as() noexcept -> T
     {
         return static_cast<T>(chunk.data[ip++]);
+    }
+
+    [[nodiscard]] constexpr auto read_short() noexcept -> std::uint16_t
+    {
+        ip += 2;
+        return static_cast<std::uint16_t>((chunk.data[ip - 2] << 8) | chunk.data[ip - 1]);
     }
 
 

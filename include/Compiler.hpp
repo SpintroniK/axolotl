@@ -7,6 +7,7 @@
 
 #include <array>
 #include <charconv>
+#include <cstdint>
 #include <functional>
 #include <iostream>
 #include <limits>
@@ -327,6 +328,40 @@ private:
         emit_byte(OpCode::Pop);
     }
 
+    auto emit_jump(OpCode instruction) -> std::size_t
+    {
+        emit_byte(instruction);
+        emit_byte(static_cast<std::uint8_t>(0xFF));
+        emit_byte(static_cast<std::uint8_t>(0xFF));
+
+        return current_chunk().size() - 2;
+    }
+
+    auto patch_jump(int offset) -> void
+    {
+        const auto jump = current_chunk().size() - offset - 2;
+
+        if (jump > std::numeric_limits<std::uint16_t>::max())
+        {
+            error("Too much code to jump over.");
+        }
+
+        current_chunk().set(offset, static_cast<std::byte>((jump >> 8) & 0xFF));
+        current_chunk().set(offset + 1, static_cast<std::byte>(jump & 0xFF));
+    }
+
+    auto if_statement() -> void
+    {
+        consume(TokenType::LEFT_PAREN, "Expect '(' after 'if'.");
+        expression();
+        consume(TokenType::RIGHT_PAREN, "Expect ')' after condition.");
+
+        const auto then_jump = emit_jump(OpCode::JumpIfFalse);
+        statement();
+
+        patch_jump(then_jump);
+    }
+
     auto emit_constant(const Value& value) -> void
     {
         emit_bytes(OpCode::Constant, make_constant(value));
@@ -555,6 +590,10 @@ private:
         if (match(TokenType::PRINT))
         {
             print_statement();
+        }
+        else if (match(TokenType::IF))
+        {
+            if_statement();
         }
         else if (match(TokenType::LEFT_BRACE))
         {

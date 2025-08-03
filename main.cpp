@@ -36,15 +36,13 @@ int main(int argc, char** argv)
     const auto args = std::vector<std::string_view>{ argv, argv + argc };
 
     const auto chunk = Compiler{ R"===(
-
+var a = 1;
+if (a == 0)
 {
-  var a = "outer";
-  {
-    var b = a;
-  }
+    print 1;
 }
-
-)===" }
+    print 2;
+        )===" }
                        .compile()
                        .value();
 
