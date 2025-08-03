@@ -357,11 +357,13 @@ private:
         consume(TokenType::RIGHT_PAREN, "Expect ')' after condition.");
 
         const auto then_jump = emit_jump(OpCode::JumpIfFalse);
+        emit_byte(OpCode::Pop);
         statement();
 
         const auto else_jump = emit_jump(OpCode::Jump);
 
         patch_jump(then_jump);
+        emit_byte(OpCode::Pop);
 
         if (match(TokenType::ELSE))
         {

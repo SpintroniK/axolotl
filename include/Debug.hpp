@@ -44,6 +44,8 @@ namespace debug
             case OpCode::Constant: return constant_instruction("CONSTANT", chunk, offset);
             case OpCode::Negate: return simple_instruction("NEGATE", offset);
             case OpCode::Print: simple_instruction("PRINT", offset);
+            case OpCode::Jump: return jump_instruction("JUMP", 1, chunk, offset);
+            case OpCode::JumpIfFalse: return jump_instruction("JUMP_IF_FALSE", 1, chunk, offset);
             case OpCode::Add: return simple_instruction("ADD", offset);
             case OpCode::Subtract: return simple_instruction("SUBTRACT", offset);
             case OpCode::Mutliply: return simple_instruction("MULTIPLY", offset);
@@ -76,6 +78,14 @@ namespace debug
 
             std::cout << std::left << std::setw(16) << name << std::setw(4) << static_cast<signed char>(slot) << '\n';
             return offset + 2;
+        }
+
+        static std::size_t jump_instruction(std::string_view name, int sign, const Chunk& chunk, std::size_t offset)
+        {
+            auto jump = static_cast<uint16_t>(chunk.data[offset + 1] << 8);
+            jump |= static_cast<std::uint16_t>(chunk.data[offset + 2]);
+            std::cout << name << "    " << offset << " " << (offset + 3 + sign * jump) << '\n';
+            return offset + 3;
         }
 
         static std::size_t simple_instruction(std::string_view name, std::size_t offset)
