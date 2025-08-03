@@ -28,6 +28,7 @@ enum class OpCode : std::uint8_t
     Not,
     Negate,
     Print,
+    Jump,
     JumpIfFalse,
     Return,
 };

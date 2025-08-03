@@ -359,7 +359,16 @@ private:
         const auto then_jump = emit_jump(OpCode::JumpIfFalse);
         statement();
 
+        const auto else_jump = emit_jump(OpCode::Jump);
+
         patch_jump(then_jump);
+
+        if (match(TokenType::ELSE))
+        {
+            statement();
+        }
+
+        patch_jump(else_jump);
     }
 
     auto emit_constant(const Value& value) -> void

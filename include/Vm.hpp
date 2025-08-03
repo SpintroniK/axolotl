@@ -144,6 +144,12 @@ private:
             {
                 return InterpretResult::Ok;
             }
+            case OpCode::Jump:
+            {
+                const auto offset = read_short();
+                ip += offset;
+                break;
+            }
             case OpCode::JumpIfFalse:
             {
                 const auto offset = read_short();
