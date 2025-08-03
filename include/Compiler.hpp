@@ -52,6 +52,11 @@ public:
     {
     }
 
+    auto set_depth(int desired_depth) -> void
+    {
+        depth = desired_depth;
+    }
+
     [[nodiscard]] auto get_depth() const noexcept -> int
     {
         return depth;
@@ -98,7 +103,7 @@ public:
             return false;
         }
 
-        locals[local_count++] = Local{ token, static_cast<int>(scope_depth) };
+        locals[local_count++] = Local{ token, -1 };
 
         return true;
     }
@@ -120,11 +125,20 @@ public:
 
             if (token.get_lexme() == local.get_token().get_lexme())
             {
+                if (local.get_depth() == -1)
+                {
+                    return -2;
+                }
                 return i;
             }
         }
 
         return -1;
+    }
+
+    auto set_local_depth(std::size_t index, int depth)
+    {
+        locals[index].set_depth(depth);
     }
 
     [[nodiscard]] auto get_scope_depth() const noexcept -> std::size_t
@@ -290,10 +304,16 @@ private:
         add_local(parser.previous);
     }
 
+    auto mark_initialized() -> void
+    {
+        current_state.set_local_depth(current_state.get_local_count() - 1, static_cast<int>(current_state.get_scope_depth()));
+    }
+
     auto define_variable(std::uint8_t global) -> void
     {
         if (current_state.get_scope_depth() > 0)
         {
+            mark_initialized();
             return;
         }
 
@@ -379,7 +399,14 @@ private:
 
     auto resolve_local(const Token& token) -> int
     {
-        return current_state.find(token);
+        const auto found = current_state.find(token);
+
+        if (found == -2)
+        {
+            error("Can't read local variable in its own initializer.");
+        }
+
+        return found;
     }
 
 

@@ -37,16 +37,12 @@ int main(int argc, char** argv)
 
     const auto chunk = Compiler{ R"===(
 
-    var a = "toto";
-    {
-        var b = "titi";
-        print b;
-        {
-            var c = "tata";
-            print c;
-        }
-    }
-    print a;
+{
+  var a = "outer";
+  {
+    var b = a;
+  }
+}
 
 )===" }
                        .compile()
