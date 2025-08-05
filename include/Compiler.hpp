@@ -590,6 +590,22 @@ private:
         emit_byte(OpCode::Print);
     }
 
+    auto while_statement() -> void
+    {
+        const auto loop_start = current_chunk().size();
+        consume(TokenType::LEFT_PAREN, "Expect '(' after 'while'.");
+        expression();
+        consume(TokenType::RIGHT_PAREN, "Expect ')' after condition.");
+
+        const auto exit_jump = emit_jump(OpCode::JumpIfFalse);
+        emit_byte(OpCode::Pop);
+        statement();
+        emit_loop(loop_start);
+
+        patch_jump(static_cast<int>(exit_jump));
+        emit_byte(OpCode::Pop);
+    }
+
     auto synchronize() -> void
     {
         parser.panic_mode = false;
@@ -627,6 +643,10 @@ private:
         else if (match(TokenType::IF))
         {
             if_statement();
+        }
+        else if (match(TokenType::WHILE))
+        {
+            while_statement();
         }
         else if (match(TokenType::LEFT_BRACE))
         {
@@ -711,6 +731,20 @@ private:
     auto emit_bytes(T... bytes) -> void
     {
         (emit_byte(bytes), ...);
+    }
+
+    auto emit_loop(int loop_start) -> void
+    {
+        emit_byte(OpCode::Loop);
+        const auto offset = current_chunk().size() - loop_start + 2;
+
+        if (offset > std::numeric_limits<std::uint16_t>::max())
+        {
+            error("Loop body too large.");
+        }
+
+        emit_byte((offset >> 8) & 0XFF);
+        emit_byte(offset & 0XFF);
     }
 
     [[nodiscard]] auto current_chunk() noexcept -> Chunk&

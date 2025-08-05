@@ -140,6 +140,12 @@ private:
                 std::visit([](const auto& value) { std::cout << value << '\n'; }, stack.pop());
                 break;
             }
+            case OpCode::Loop:
+            {
+                const auto offset = read_short();
+                ip -= offset;
+                break;
+            }
             case OpCode::Return:
             {
                 return InterpretResult::Ok;

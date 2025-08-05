@@ -30,6 +30,7 @@ enum class OpCode : std::uint8_t
     Print,
     Jump,
     JumpIfFalse,
+    Loop,
     Return,
 };
 
