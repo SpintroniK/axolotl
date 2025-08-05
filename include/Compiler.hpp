@@ -321,6 +321,28 @@ private:
         emit_bytes(OpCode::DefineGlobal, global);
     }
 
+    auto and_([[maybe_unused]] bool can_assign) -> void
+    {
+        const auto end_jump = emit_jump(OpCode::JumpIfFalse);
+
+        emit_byte(OpCode::Pop);
+        parse_precedence(Precedence::AND);
+
+        patch_jump(static_cast<int>(end_jump));
+    }
+
+    auto or_([[maybe_unused]] bool can_assign) -> void
+    {
+        const auto else_jump = emit_jump(OpCode::JumpIfFalse);
+        const auto end_jump = emit_jump(OpCode::Jump);
+
+        patch_jump(static_cast<int>(else_jump));
+        emit_jump(OpCode::Pop);
+
+        parse_precedence(Precedence::OR);
+        patch_jump(static_cast<int>(end_jump));
+    }
+
     auto expression_statement() -> void
     {
         expression();
@@ -362,7 +384,7 @@ private:
 
         const auto else_jump = emit_jump(OpCode::Jump);
 
-        patch_jump(then_jump);
+        patch_jump(static_cast<int>(then_jump));
         emit_byte(OpCode::Pop);
 
         if (match(TokenType::ELSE))
@@ -716,8 +738,8 @@ private:
         { .prefix = nullptr, .infix = &Compiler::binary, .precedence = Precedence::FACTOR },
         { .prefix = &Compiler::unary, .infix = nullptr, .precedence = Precedence::NONE },
         { .prefix = nullptr, .infix = &Compiler::binary, .precedence = Precedence::EQUALITY },
+        { .prefix = nullptr, .infix = &Compiler::binary, .precedence = Precedence::NONE },
         { .prefix = nullptr, .infix = &Compiler::binary, .precedence = Precedence::EQUALITY },
-        { .prefix = nullptr, .infix = &Compiler::binary, .precedence = Precedence::COMPARISON },
         { .prefix = nullptr, .infix = &Compiler::binary, .precedence = Precedence::COMPARISON },
         { .prefix = nullptr, .infix = &Compiler::binary, .precedence = Precedence::COMPARISON },
         { .prefix = nullptr, .infix = &Compiler::binary, .precedence = Precedence::COMPARISON },
@@ -725,15 +747,15 @@ private:
         { .prefix = &Compiler::variable, .infix = nullptr, .precedence = Precedence::NONE },
         { .prefix = &Compiler::string, .infix = nullptr, .precedence = Precedence::NONE },
         { .prefix = &Compiler::number, .infix = nullptr, .precedence = Precedence::NONE },
-        { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },
-        { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },
-        { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },
-        { .prefix = &Compiler::literal, .infix = nullptr, .precedence = Precedence::NONE },
-        { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },
+        { .prefix = nullptr, .infix = &Compiler::and_, .precedence = Precedence::AND },
         { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },
         { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },
         { .prefix = &Compiler::literal, .infix = nullptr, .precedence = Precedence::NONE },
         { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },
+        { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },
+        { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },
+        { .prefix = &Compiler::literal, .infix = nullptr, .precedence = Precedence::NONE },
+        { .prefix = nullptr, .infix = &Compiler::or_, .precedence = Precedence::OR },
         { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },
         { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },
         { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },

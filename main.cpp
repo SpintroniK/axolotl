@@ -37,14 +37,20 @@ int main(int argc, char** argv)
 
     const auto chunk = Compiler{ R"===(
 var a = 1;
-if (a == 1)
+var b = a;
+if (a == 0 or b == a)
 {
-    print 1;
+        b= 3;
+    var c= 4;
+    print c;
 }
 else
 {
-    print 2;
+    b = 4;
+    var c = 5;
+    print c;
 }
+print b;
         )===" }
                        .compile()
                        .value();
