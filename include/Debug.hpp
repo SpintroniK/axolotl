@@ -27,7 +27,7 @@ namespace debug
 
         static std::size_t dissassemble_instruction(const Chunk& chunk, std::size_t offset)
         {
-            std::cout << std::setw(4) << std::setfill('0') << offset << ' ';
+            std::cout << std::right << std::setw(4) << std::setfill('0') << offset << ' ' << std::setfill(' ');
 
             if (offset > 0 && chunk.lines[offset] == chunk.lines[offset - 1])
             {
@@ -35,7 +35,8 @@ namespace debug
             }
             else
             {
-                std::cout << std::setw(4) << std::setfill('0') << chunk.lines[offset] << ' ';
+                std::cout << std::right << std::setw(4) << std::setfill(' ') << chunk.lines[offset];
+                std::cout << ' ';
             }
 
             const auto instruction = static_cast<OpCode>(chunk.data[offset]);
@@ -43,13 +44,14 @@ namespace debug
             {
             case OpCode::Constant: return constant_instruction("CONSTANT", chunk, offset);
             case OpCode::Negate: return simple_instruction("NEGATE", offset);
-            case OpCode::Print: simple_instruction("PRINT", offset);
+            case OpCode::Print: return simple_instruction("PRINT", offset);
             case OpCode::Jump: return jump_instruction("JUMP", 1, chunk, offset);
             case OpCode::JumpIfFalse: return jump_instruction("JUMP_IF_FALSE", 1, chunk, offset);
             case OpCode::Add: return simple_instruction("ADD", offset);
             case OpCode::Subtract: return simple_instruction("SUBTRACT", offset);
             case OpCode::Mutliply: return simple_instruction("MULTIPLY", offset);
             case OpCode::Divide: return simple_instruction("DIVIDE", offset);
+            case OpCode::Loop: return jump_instruction("LOOP", -1, chunk, offset);
             case OpCode::Return: return simple_instruction("RETURN", offset);
             case OpCode::Nil: return simple_instruction("NIL", offset);
             case OpCode::True: return simple_instruction("TRUE", offset);
@@ -76,7 +78,7 @@ namespace debug
         {
             const auto slot = chunk.data[offset + 1];
 
-            std::cout << std::left << std::setw(16) << name << std::setw(4) << static_cast<signed char>(slot) << '\n';
+            std::cout << std::left << std::setw(16) << name << ' ' << std::setw(4) << static_cast<int>(slot) << '\n';
             return offset + 2;
         }
 
@@ -84,7 +86,8 @@ namespace debug
         {
             auto jump = static_cast<uint16_t>(chunk.data[offset + 1] << 8);
             jump |= static_cast<std::uint16_t>(chunk.data[offset + 2]);
-            std::cout << name << "    " << offset << " " << (offset + 3 + sign * jump) << '\n';
+            std::cout << std::left << std::setw(16) << name << std::setw(4) << offset << " -> "
+                      << (offset + 3 + sign * jump) << '\n';
             return offset + 3;
         }
 
@@ -97,7 +100,7 @@ namespace debug
         static std::size_t constant_instruction(std::string_view name, const Chunk& chunk, std::size_t offset)
         {
             const auto constant = static_cast<std::size_t>(chunk.data[offset + 1]);
-            std::cout << name << ' ' << constant << '\t';
+            std::cout << std::left << std::setw(16) << std::setfill(' ') << name << ' ' << constant << ' ';
             print_value(chunk.constants[constant]);
             std::cout << '\n';
             return offset + 2;
@@ -106,7 +109,7 @@ namespace debug
         template <typename T>
         static void print_value(const T& value)
         {
-            std::visit([](const auto& value) { std::cout << value; }, value);
+            std::visit([](const auto& value) { std::cout << '\'' << value << '\''; }, value);
         }
     };
 } // namespace debug
