@@ -119,7 +119,7 @@ public:
         for (int i = static_cast<int>(local_count - 1); i >= 0; i--)
         {
             const Local& local = locals[i];
-            if (local.get_depth() != -1 && local.get_depth() < scope_depth)
+            if (local.get_depth() != -1 && local.get_depth() > scope_depth)
             {
                 break;
             }
@@ -640,6 +640,10 @@ private:
         {
             print_statement();
         }
+        else if (match(TokenType::FOR))
+        {
+            for_statement();
+        }
         else if (match(TokenType::IF))
         {
             if_statement();
@@ -759,47 +763,48 @@ private:
 
 
     std::vector<ParseRule> rules{
-        { .prefix = &Compiler::grouping, .infix = nullptr, .precedence = Precedence::NONE },
-        { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },
-        { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },
-        { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },
-        { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },
-        { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },
-        { .prefix = &Compiler::unary, .infix = &Compiler::binary, .precedence = Precedence::TERM },
-        { .prefix = nullptr, .infix = &Compiler::binary, .precedence = Precedence::TERM },
-        { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },
-        { .prefix = nullptr, .infix = &Compiler::binary, .precedence = Precedence::FACTOR },
-        { .prefix = nullptr, .infix = &Compiler::binary, .precedence = Precedence::FACTOR },
-        { .prefix = &Compiler::unary, .infix = nullptr, .precedence = Precedence::NONE },
-        { .prefix = nullptr, .infix = &Compiler::binary, .precedence = Precedence::EQUALITY },
-        { .prefix = nullptr, .infix = &Compiler::binary, .precedence = Precedence::NONE },
-        { .prefix = nullptr, .infix = &Compiler::binary, .precedence = Precedence::EQUALITY },
-        { .prefix = nullptr, .infix = &Compiler::binary, .precedence = Precedence::COMPARISON },
-        { .prefix = nullptr, .infix = &Compiler::binary, .precedence = Precedence::COMPARISON },
-        { .prefix = nullptr, .infix = &Compiler::binary, .precedence = Precedence::COMPARISON },
-        { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },
-        { .prefix = &Compiler::variable, .infix = nullptr, .precedence = Precedence::NONE },
-        { .prefix = &Compiler::string, .infix = nullptr, .precedence = Precedence::NONE },
-        { .prefix = &Compiler::number, .infix = nullptr, .precedence = Precedence::NONE },
-        { .prefix = nullptr, .infix = &Compiler::and_, .precedence = Precedence::AND },
-        { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },
-        { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },
-        { .prefix = &Compiler::literal, .infix = nullptr, .precedence = Precedence::NONE },
-        { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },
-        { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },
-        { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },
-        { .prefix = &Compiler::literal, .infix = nullptr, .precedence = Precedence::NONE },
-        { .prefix = nullptr, .infix = &Compiler::or_, .precedence = Precedence::OR },
-        { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },
-        { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },
-        { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },
-        { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },
-        { .prefix = &Compiler::literal, .infix = nullptr, .precedence = Precedence::NONE },
-        { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },
-        { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },
-        { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },
-        { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },
+        { .prefix = &Compiler::grouping, .infix = nullptr, .precedence = Precedence::NONE },        // LEFT_PAREN
+        { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },                    // RIGHT_PAREN
+        { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },                    // LEFT_BRACE
+        { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },                    // RIGHT_BRACE
+        { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },                    // COMMA
+        { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },                    // DOT
+        { .prefix = &Compiler::unary, .infix = &Compiler::binary, .precedence = Precedence::TERM }, // MINUS
+        { .prefix = nullptr, .infix = &Compiler::binary, .precedence = Precedence::TERM },          // PLUS
+        { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },                    // SEMICOLON
+        { .prefix = nullptr, .infix = &Compiler::binary, .precedence = Precedence::FACTOR },        // SLASH
+        { .prefix = nullptr, .infix = &Compiler::binary, .precedence = Precedence::FACTOR },        // STAR
+        { .prefix = &Compiler::unary, .infix = nullptr, .precedence = Precedence::NONE },           // BANG
+        { .prefix = nullptr, .infix = &Compiler::binary, .precedence = Precedence::EQUALITY },      // BANG_EQUAL
+        { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },                    // EQUAL
+        { .prefix = nullptr, .infix = &Compiler::binary, .precedence = Precedence::EQUALITY },      // EQUAL_EQUAL
+        { .prefix = nullptr, .infix = &Compiler::binary, .precedence = Precedence::COMPARISON },    // GREATER
+        { .prefix = nullptr, .infix = &Compiler::binary, .precedence = Precedence::COMPARISON },    // GREATER_EQUAL
+        { .prefix = nullptr, .infix = &Compiler::binary, .precedence = Precedence::COMPARISON },    // LESS
+        { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::COMPARISON },              // LESS_EQUAL
+        { .prefix = &Compiler::variable, .infix = nullptr, .precedence = Precedence::NONE },        // IDENTIFIER
+        { .prefix = &Compiler::string, .infix = nullptr, .precedence = Precedence::NONE },          // STRING
+        { .prefix = &Compiler::number, .infix = nullptr, .precedence = Precedence::NONE },          // NUMBER
+        { .prefix = nullptr, .infix = &Compiler::and_, .precedence = Precedence::AND },             // AND
+        { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },                    // CLASS
+        { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },                    // ELSE
+        { .prefix = &Compiler::literal, .infix = nullptr, .precedence = Precedence::NONE },         // FALSE
+        { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },                    // FOR
+        { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },                    // FUN
+        { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },                    // IF
+        { .prefix = &Compiler::literal, .infix = nullptr, .precedence = Precedence::NONE },         // NIL
+        { .prefix = nullptr, .infix = &Compiler::or_, .precedence = Precedence::OR },               // OR
+        { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },                    // PRINT
+        { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },                    // RETURN
+        { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },                    // SUPER
+        { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },                    // THIS
+        { .prefix = &Compiler::literal, .infix = nullptr, .precedence = Precedence::NONE },         // TRUE
+        { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },                    // VAR
+        { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },                    // WHILE
+        { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },                    // ERROR
+        { .prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE },                    // Eof
     };
+
 
     Parser parser;
     Scanner scanner;

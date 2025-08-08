@@ -308,7 +308,7 @@ private:
 
     auto peek(int offset) -> Value
     {
-        return stack.at(offset);
+        return stack.at(stack.top() + offset - 1);
     }
 
     void reset_stack()
