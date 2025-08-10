@@ -350,6 +350,63 @@ private:
         emit_byte(OpCode::Pop);
     }
 
+    auto for_statement() -> void
+    {
+        begin_scope();
+
+        consume(TokenType::LEFT_PAREN, "Expect '(' after 'for'.");
+
+        if (match(TokenType::SEMICOLON))
+        {
+        }
+        else if (match(TokenType::VAR))
+        {
+            var_declaration();
+        }
+        else
+        {
+            expression_statement();
+        }
+
+
+        int loop_start = current_chunk().size();
+
+        int exit_jump = -1;
+
+        if (!match(TokenType::SEMICOLON))
+        {
+            expression();
+            consume(TokenType::SEMICOLON, "Expect ';' after loop condition.");
+
+            exit_jump = static_cast<int>(emit_jump(OpCode::JumpIfFalse));
+            emit_byte(OpCode::Pop);
+        }
+
+        if (!match(TokenType::RIGHT_PAREN))
+        {
+            const auto body_jump = emit_jump(OpCode::Jump);
+            auto increment_start = current_chunk().size();
+            expression();
+            emit_byte(OpCode::Pop);
+
+            consume(TokenType::RIGHT_PAREN, "Expect ')' after for clauses.");
+
+            emit_loop(loop_start);
+            loop_start = increment_start;
+            patch_jump(static_cast<int>(body_jump));
+        }
+        statement();
+        emit_loop(loop_start);
+
+        if (exit_jump != -1)
+        {
+            patch_jump(exit_jump);
+            emit_byte(OpCode::Pop);
+        }
+
+        end_scope();
+    }
+
     auto emit_jump(OpCode instruction) -> std::size_t
     {
         emit_byte(instruction);
@@ -737,7 +794,7 @@ private:
         (emit_byte(bytes), ...);
     }
 
-    auto emit_loop(int loop_start) -> void
+    auto emit_loop(std::size_t loop_start) -> void
     {
         emit_byte(OpCode::Loop);
         const auto offset = current_chunk().size() - loop_start + 2;
