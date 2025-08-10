@@ -1,5 +1,7 @@
 #pragma once
 
+
+#include <memory>
 #include <string>
 #include <variant>
 #include <vector>
@@ -8,7 +10,33 @@ using Number = double;
 using Boolean = bool;
 using String = std::string;
 
-using Value = std::variant<Boolean, Number, String>;
+class Function
+{
+public:
+    Function(const Function& other);
+    Function& operator=(const Function& other);
+
+    Function(Function&& other) noexcept;
+    Function& operator=(Function&& other) noexcept;
+
+    bool operator==(const Function& other) const;
+
+
+    ~Function();
+
+    [[nodiscard]] auto get_name() const noexcept -> std::string
+    {
+        return name;
+    }
+
+
+private:
+    std::size_t arity = 0;
+    std::unique_ptr<class Chunk> chunk_ptr;
+    std::string name;
+};
+
+using Value = std::variant<Boolean, Number, String, Function>;
 using ValueArray = std::vector<Value>;
 
 namespace values

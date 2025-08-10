@@ -90,7 +90,7 @@ public:
     template <typename F>
     auto clean_scope(F func) -> void
     {
-        while (local_count > 0 && locals[local_count - 1].get_depth() > scope_depth)
+        while (local_count > 0 && locals[local_count - 1].get_depth() < scope_depth)
         {
             std::invoke(func);
             local_count--;

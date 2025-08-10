@@ -7,6 +7,7 @@
 #include <iomanip>
 #include <iostream>
 #include <string_view>
+#include <type_traits>
 #include <variant>
 
 namespace debug
@@ -109,7 +110,19 @@ namespace debug
         template <typename T>
         static void print_value(const T& value)
         {
-            std::visit([](const auto& value) { std::cout << '\'' << value << '\''; }, value);
+            std::visit(
+            []<typename value_t>(const value_t& value)
+            {
+                if constexpr (std::is_same_v<value_t, Function>)
+                {
+                    std::cout << "<Fn " << value.get_name() << '>';
+                }
+                else
+                {
+                    std::cout << '\'' << value << '\'';
+                }
+            },
+            value);
         }
     };
 } // namespace debug

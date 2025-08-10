@@ -2,7 +2,6 @@
 
 #include "Chunk.hpp"
 #include "Compiler.hpp"
-#include "Value.hpp"
 
 #include <array>
 #include <cstddef>
@@ -11,7 +10,6 @@
 #include <iostream>
 #include <map>
 #include <string>
-#include <string_view>
 #include <type_traits>
 #include <variant>
 
@@ -137,7 +135,19 @@ private:
             {
             case OpCode::Print:
             {
-                std::visit([](const auto& value) { std::cout << value << '\n'; }, stack.pop());
+                std::visit(
+                []<typename value_t>(const value_t& value)
+                {
+                    if constexpr (std::is_same_v<value_t, Function>)
+                    {
+                        std::cout << "<Fn " << value.get_name() << '>';
+                    }
+                    else
+                    {
+                        std::cout << '\'' << value << '\'';
+                    }
+                },
+                stack.pop());
                 break;
             }
             case OpCode::Loop:
