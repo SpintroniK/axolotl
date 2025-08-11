@@ -35,18 +35,20 @@ int main(int argc, char** argv)
 {
     const auto args = std::vector<std::string_view>{ argv, argv + argc };
 
-    const auto chunk = Compiler{ R"===(
-var a = 1;
-while(a < 10)
+    const auto chunk = Compiler{ R"===(for(var i = 0; i < 10; i=i+1)
 {
-    a = a + 1;
-    print a;
+    print i;
+}
+var b = 0;
+while(b < 4)
+{
+    print b;
+    b = b + 1;
 }
         )===" }
                        .compile()
                        .value();
 
-    // debug::Debug::dissassemble_chunk(chunk, "chunk");
 
     Vm vm;
     const auto result = vm.interpret(chunk);

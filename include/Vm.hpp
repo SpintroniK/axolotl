@@ -144,7 +144,7 @@ private:
                     }
                     else
                     {
-                        std::cout << '\'' << value << '\'';
+                        std::cout << value << '\n';
                     }
                 },
                 stack.pop());

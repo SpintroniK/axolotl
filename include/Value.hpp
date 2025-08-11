@@ -13,6 +13,8 @@ using String = std::string;
 class Function
 {
 public:
+    Function();
+
     Function(const Function& other);
     Function& operator=(const Function& other);
 
@@ -23,6 +25,8 @@ public:
 
 
     ~Function();
+
+    [[nodiscard]] auto chunk() const noexcept -> class Chunk&;
 
     [[nodiscard]] auto get_name() const noexcept -> std::string
     {

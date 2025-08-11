@@ -73,6 +73,12 @@ private:
     int depth = -1;
 };
 
+enum class FunctionType : std::uint8_t
+{
+    Function,
+    Script
+};
+
 class CompilerState
 {
 public:
@@ -157,7 +163,15 @@ public:
         return locals[index];
     }
 
+    auto func() noexcept -> Function&
+    {
+        return function;
+    }
+
 private:
+    Function function;
+    FunctionType function_type = FunctionType::Script;
+
     std::array<Local, std::numeric_limits<std::uint8_t>::max() + 1> locals{};
     std::size_t local_count = 0;
     std::size_t scope_depth = 0;
@@ -180,7 +194,6 @@ public:
 
     std::optional<Chunk> compile()
     {
-        compiling_chunk = Chunk{};
         current_state = CompilerState{};
 
         parser.panic_mode = false;
@@ -200,7 +213,7 @@ public:
             return std::nullopt;
         }
 
-        return compiling_chunk;
+        return current_chunk();
     }
 
 private:
@@ -810,7 +823,7 @@ private:
 
     [[nodiscard]] auto current_chunk() noexcept -> Chunk&
     {
-        return compiling_chunk;
+        return current_state.func().chunk();
     }
 
     [[nodiscard]] auto get_rule(TokenType type) const -> ParseRule
@@ -865,6 +878,5 @@ private:
 
     Parser parser;
     Scanner scanner;
-    Chunk compiling_chunk;
     CompilerState current_state;
 };

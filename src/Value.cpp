@@ -1,5 +1,10 @@
 #include "Value.hpp"
 #include "Chunk.hpp"
+#include <memory>
+
+Function::Function() : chunk_ptr{ std::make_unique<Chunk>() }
+{
+}
 
 Function::~Function() = default;
 
@@ -42,4 +47,10 @@ Function& Function::operator=(Function&& other) noexcept
 bool Function::operator==(const Function& other) const
 {
     return name == other.name;
+}
+
+
+[[nodiscard]] auto Function::chunk() const noexcept -> class Chunk&
+{
+    return *chunk_ptr;
 }
